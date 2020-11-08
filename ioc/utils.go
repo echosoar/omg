@@ -6,8 +6,16 @@ import (
 	"strings"
 )
 
-func GetAnyThingNameAndType(anyThing interface{}) (string, string) {
+func GetNameAndType(anyThing interface{}) (string, string) {
 	t := reflect.TypeOf(anyThing)
+	name, typeStr := GetNameAndTypeByRfType(t);
+	if typeStr == "func" {
+		return runtime.FuncForPC(reflect.ValueOf(anyThing).Pointer()).Name(), typeStr;
+	}
+	return name, typeStr;
+}
+
+func GetNameAndTypeByRfType(t reflect.Type) (string, string) {
 	kind := t.Kind();
 	var typeStr = "unknow";
 
@@ -19,10 +27,5 @@ func GetAnyThingNameAndType(anyThing interface{}) (string, string) {
 	default:
 		typeStr = strings.ToLower(kind.String());
 	}
-
-	if typeStr == "func" {
-		return runtime.FuncForPC(reflect.ValueOf(anyThing).Pointer()).Name(), typeStr;
-	}
-
 	return t.Name(), typeStr;
 }

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"net/http"
+	"github.com/valyala/fasthttp"
 )
 
 type AppContext struct {
@@ -28,15 +28,18 @@ type Context struct {
 type Request struct {
 	Url string
 	Method Method
-	OriginReq *http.Request
+	OriginReq *fasthttp.Request
 }
 
 type Response struct {
 	Headers map[string][]string
+	Type string
 }
 
 func (ctx *Context) Get(key string) []string {
-	return ctx.Req.OriginReq.Header[key];
+	headerValueBytes := ctx.Req.OriginReq.Header.Peek(key);
+	var values []string;
+	return append(values, string(headerValueBytes));
 }
 
 func (ctx *Context) Set(key string, value ...string) {

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"net/http"
+	"github.com/valyala/fasthttp"
 	"sort"
 )
 type Server struct {
@@ -9,14 +9,32 @@ type Server struct {
 	Routers []RouteItem
 	mw MiddleWareManager
 	app *AppContext
+	srv *fasthttp.Server
 }
 
-func (s *Server) Start(port string) {
+func (s *Server) Start(port string, protocol ...string) {
 	s.Port = port;
 	// 路径进行排序
 	s.sortRegister();
-	http.HandleFunc("/", s.handleRequest);
-	http.ListenAndServe("0.0.0.0:" + s.Port, nil);
+
+	s.srv = &fasthttp.Server{
+    Handler: s.handlerRequest,
+    Name: "Gos",
+	}
+
+	protocolLen := len(protocol);
+	if protocolLen == 0 {
+		protocol = append(protocol, ProtocolHttp);
+	}
+	if UtilsExistsInSlice(protocol, "http") {
+		s.srv.ListenAndServe(":" + s.Port);
+	}
+
+	// https
+}
+
+func (s *Server) Close() error {
+	return s.srv.Shutdown();
 }
 
 func (s *Server) Get(path string, handler Handler) *Server {
@@ -26,6 +44,13 @@ func (s *Server) Get(path string, handler Handler) *Server {
 
 func (s *Server) Post(path string, handler Handler) *Server {
 	s.putToRouterItem(path, MethodPost, handler);
+	return s;
+}
+
+func (s *Server) Handle(path string, handler Handler, methods ...Method) *Server {
+	for _, method := range methods {
+		s.putToRouterItem(path, method, handler);
+	}
 	return s;
 }
 
@@ -45,18 +70,19 @@ func (s *Server) findRouter(path string) *RouteItem {
 	return &s.Routers[len(s.Routers) - 1]; 
 }
 
-func (s *Server) handleRequest(w http.ResponseWriter, req *http.Request) {
-	path := req.URL.Path;
-	method := GetMethod(req.Method);
+func (s *Server) handlerRequest(fsh *fasthttp.RequestCtx) {
+	path := string(fsh.Path());
+	method := GetMethod(string(fsh.Method()));
 
 	newReq := Request {
 		path,
 		method,
-		req,
+		&fsh.Request,
 	};
 
 	newRes := Response {
 		make(map[string][]string),
+		"",
 	};
 
 	ctx := &Context {newReq, newRes, 200, s.app};
@@ -65,10 +91,20 @@ func (s *Server) handleRequest(w http.ResponseWriter, req *http.Request) {
 	
 	result, err := s.mw.Exec(ctx, handler);
 
-	respHead := w.Header();
+
+	contentType := UtilsGetContentType(ctx.Res.Type, ctx.Req.Url);
+
+	respHead := &fsh.Response.Header;
+	respHead.Set("Content-Type", contentType);
 	if len(ctx.Res.Headers) > 0 {
 		for key, value := range ctx.Res.Headers {
-			respHead[key] = value;
+			for index, valueLine := range value {
+				if index == 0 {
+					respHead.Set(key, valueLine);
+				} else {
+					respHead.Add(key, valueLine);
+				}
+			}
 		}
 	}
 
@@ -77,8 +113,8 @@ func (s *Server) handleRequest(w http.ResponseWriter, req *http.Request) {
 		result = err.Error();
 	}
 
-	w.WriteHeader(ctx.Status);
-	w.Write([]byte(result));
+	fsh.Response.SetStatusCode(ctx.Status);
+	fsh.Response.SetBodyString(result);
 }
 
 func (s *Server) putToRouterItem(path string, method Method, handler Handler) {
@@ -127,6 +163,7 @@ func New() *Server {
 		nil,
 		MiddleWareManager{},
 		&AppContext{},
+		nil,
 	}
 	return server;
 }

@@ -1,4 +1,4 @@
-package server
+package omg
 import (
 	"mime"
 	"path/filepath"

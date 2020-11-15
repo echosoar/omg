@@ -1,4 +1,4 @@
-package server;
+package omg;
 type MiddleWareManager struct {
 	list []*MW
 }

@@ -1,4 +1,4 @@
-package server
+package omg
 
 const (
 	ProtocolHttp string = "http"

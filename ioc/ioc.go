@@ -21,13 +21,27 @@ func (i *IoC) Provide(anyThing interface{}) error {
 		return &IoCError{"Not support" + provideType};
 	}
 
+	i.ProvideByName(provideName, anyThing);
+	return nil;
+}
+
+func (i *IoC) ProvideByName(provideName string, anyThing interface{}) error {
 	i.container[provideName] = anyThing;
 	return nil;
 }
 
+
 // Inject
 func (i *IoC) Inject(anyThing interface{}) (interface {}, error) {
 	strt := reflect.TypeOf(anyThing);
+	// inject by id
+	if strt.String() == "string" {
+		data := i.container[anyThing.(string)];
+		if data == nil {
+			return nil, &IoCError{"Not Exists"};
+		}
+		return data, nil;
+	}
 	for index := 0; index < strt.NumField(); index++ {
 		value := strt.Field(index);
 		injectTag := value.Tag.Get("inject");
@@ -107,5 +121,9 @@ func New(name string) *IoC {
 }
 
 func Get(name string) *IoC {
-	return globalIocContainer[name];
+	ioc := globalIocContainer[name];
+	if ioc == nil {
+		return New(name);
+	}
+	return ioc;
 }

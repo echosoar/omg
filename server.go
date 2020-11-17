@@ -3,6 +3,7 @@ package omg
 import (
 	"github.com/valyala/fasthttp"
 	"sort"
+	"bytes"
 )
 type Server struct {
 	Port string
@@ -19,7 +20,7 @@ func (s *Server) Start(port string, protocol ...string) {
 
 	s.srv = &fasthttp.Server{
     Handler: s.handlerRequest,
-    Name: "Gos",
+    Name: "Omg",
 	}
 
 	protocolLen := len(protocol);
@@ -85,7 +86,7 @@ func (s *Server) handlerRequest(fsh *fasthttp.RequestCtx) {
 		"",
 	};
 
-	ctx := &Context {newReq, newRes, 200, s.app};
+	ctx := &Context {newReq, newRes, 200, s.app, nil};
 
 	handler := s.findHandlerByPathAnd(path, method);
 	
@@ -111,10 +112,16 @@ func (s *Server) handlerRequest(fsh *fasthttp.RequestCtx) {
 	if err != nil {
 		ctx.Status = 503;
 		result = err.Error();
+		ctx.Body = nil;
 	}
 
 	fsh.Response.SetStatusCode(ctx.Status);
-	fsh.Response.SetBodyString(result);
+
+	if ctx.Body != nil {
+		fsh.Response.SetBodyStream(bytes.NewReader(ctx.Body), len(ctx.Body));
+	} else {
+		fsh.Response.SetBodyString(result);
+	}
 }
 
 func (s *Server) putToRouterItem(path string, method Method, handler Handler) {

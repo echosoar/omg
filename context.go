@@ -23,6 +23,7 @@ type Context struct {
 	Res Response
 	Status int // response status
 	app *AppContext
+	Body []byte
 }
 
 type Request struct {

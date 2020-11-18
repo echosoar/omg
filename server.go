@@ -84,9 +84,10 @@ func (s *Server) handlerRequest(fsh *fasthttp.RequestCtx) {
 	newRes := Response {
 		make(map[string][]string),
 		"",
+		&fsh.Response,
 	};
 
-	ctx := &Context {newReq, newRes, 200, s.app, nil};
+	ctx := &Context {newReq, newRes, 200, nil, s.app};
 
 	handler := s.findHandlerByPathAnd(path, method);
 	

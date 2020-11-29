@@ -20,14 +20,14 @@ func MW(app *omg.AppContext) omg.MW {
 		staticFilePath := path.Join(cwd, config.Dir, reqFilePath);
 		stat, statErr := os.Stat(staticFilePath);
 		if statErr != nil {
-			return  next();
+			return next();
 		}
 
 		if stat.IsDir() {
 			staticFilePath = path.Join(staticFilePath, config.Index);
 			stat, statErr = os.Stat(staticFilePath);
 			if statErr != nil {
-				return  next();
+				return next();
 			}
 		}
 

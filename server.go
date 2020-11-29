@@ -76,18 +76,23 @@ func (s *Server) handlerRequest(fsh *fasthttp.RequestCtx) {
 	method := GetMethod(string(fsh.Method()));
 
 	newReq := Request {
-		path,
-		method,
-		&fsh.Request,
+		Url: path,
+		Method: method,
+		OriginReq: &fsh.Request,
 	};
 
 	newRes := Response {
-		make(map[string][]string),
-		"",
-		&fsh.Response,
+		Headers: make(map[string][]string),
+		OriginRes: &fsh.Response,
 	};
 
-	ctx := &Context {newReq, newRes, 200, nil, s.app};
+	ctx := &Context {
+		Req: newReq,
+		Res: newRes,
+		Status: 200,
+		app: s.app,
+		ctxPlugin: make(map[string]interface{}),
+	};
 
 	handler := s.findHandlerByPathAnd(path, method);
 	
@@ -167,11 +172,8 @@ func (s *Server) sortRegister() {
 
 func New() *Server {
 	server := &Server {
-		"",
-		nil,
-		MiddleWareManager{},
-		&AppContext{},
-		nil,
+		mw: MiddleWareManager{},
+		app: &AppContext{},
 	}
 	return server;
 }

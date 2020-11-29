@@ -3,6 +3,7 @@ package omg
 import (
 	"github.com/valyala/fasthttp"
 	"time"
+	"errors"
 )
 
 type AppContext struct {
@@ -15,8 +16,11 @@ func (app *AppContext) SetPlugin(pluginName string, pluginClient interface {}) {
 	app.pluginMap[pluginName] = pluginClient;
 }
 
-func (app *AppContext) GetPlugin(pluginName string) interface{} {
-	return app.pluginMap[pluginName];
+func (app *AppContext) GetPlugin(pluginName string) (interface{}, error) {
+	if app.pluginMap[pluginName] != nil {
+		return app.pluginMap[pluginName], nil;
+	}
+	return nil, errors.New("not exists plugin " + pluginName);
 }
 
 type Context struct {
@@ -25,6 +29,12 @@ type Context struct {
 	Status int // response status
 	Body []byte
 	app *AppContext
+	ctxPlugin map[string]interface{}
+}
+
+type ContextPlugin struct {}
+func (ctxPlugin *ContextPlugin) GetContextInstance(ctx *Context) interface{} {
+	return nil;
 }
 
 type Request struct {
@@ -54,8 +64,15 @@ func (ctx *Context) Redirect(target string) {
 	ctx.Set("Location", target);
 }
 
-func (ctx *Context) Plugin(pluginName string) interface{} {
+func (ctx *Context) Plugin(pluginName string) (interface{}, error) {
+	if ctx.ctxPlugin[pluginName] != nil {
+		return ctx.ctxPlugin[pluginName], nil;
+	}
 	return ctx.app.GetPlugin(pluginName);
+}
+
+func (ctx *Context) SetPlugin(pluginName string, pluginInstance interface{}) {
+	ctx.ctxPlugin[pluginName] = pluginInstance;
 }
 
 func (ctx *Context) GetCookie(cookieName string) string {

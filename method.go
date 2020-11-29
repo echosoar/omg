@@ -11,7 +11,6 @@ const (
 	MethodAll Method = "all"
 )
 
-
 func GetMethod(method string) Method {
 	lowerMethod := strings.ToLower(method);
 	newMethod := MethodAll;

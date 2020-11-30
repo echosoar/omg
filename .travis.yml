@@ -33,7 +33,7 @@ install:
 go_import_path: github.com/echosoar/omg
 
 script:
-  - go test -covermode=count
+  - go test ./... -covermode=count
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

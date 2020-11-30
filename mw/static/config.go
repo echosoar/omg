@@ -14,8 +14,8 @@ type ConfigInfo struct {
 
 func init() {
 	ioc.SetConfig(ConfigKey, ConfigInfo{
-		"/",
-		"./",
-		"index.html",
+		Prefix: "/",
+		Dir: "./",
+		Index: "index.html",
 	});
 }
